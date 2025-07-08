@@ -93,6 +93,8 @@ npm install
 
 ---
 
+### Les étapes 3 et 4 sont a faire uniquement si un changement à etait fait dans le frontend
+
 ### 3. Build du frontend
 Toujour dans le dossier frontend/
 ```bash
@@ -106,11 +108,28 @@ Le contenu du build sera généré dans `frontend/dist`.
 ### 4. Copier le build dans le backend
 Depuis le dossier frontend/
 ```bash
+rm -r ../backend/static/*
 cp -r dist/* ../backend/static/
 ```
 Depuis la racine
 ```bash
+rm -r backend/static/*
 cp -r frontend/dist/* backend/static
+```
+
+Dans `backend/static/index.html`, ajoutez `/static` avant `/assets` pour les deux fichiers `.js` et `.css`:
+
+avant:
+
+```html
+<script type="module" crossorigin src="/assets index-D-TihDcz.js"></script>
+<link rel="stylesheet" crossorigin href="/assets/index-C6G_3qQV.css">
+```
+après:
+
+```html
+<script type="module" crossorigin src="/static/assets index-D-TihDcz.js"></script>
+<link rel="stylesheet" crossorigin href="/static/assets/index-C6G_3qQV.css">
 ```
 
 > 📌 **Important :** toute modification du frontend doit se faire dans le dossier `frontend/`, puis il faut recompiler avec `npm run build` et recoller dans `backend/static/`.
@@ -120,7 +139,7 @@ L'adresse IP du serveur vers lequel on envoie les WebSocket n'est pas directemen
 
 ```bash
 cd backend/
-echo -ne "IP_ADRESS=\"ip_du_server:port\"" > .env
+echo -ne "IP_ADRESS=\"ws://ip_du_server:port\"" > .env
 ```
 
 ### 5. Lancer le serveur pour test
