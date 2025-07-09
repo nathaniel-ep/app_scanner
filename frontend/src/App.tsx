@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Package, User, Plus, Check, Trash2, ScanLine, X } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
+import { showSuccess, showError } from './utils/toastutils';
 
 interface Client {
   id: string;
@@ -13,7 +15,6 @@ const options = [
   { label: 'Facture', value: '3' }
 ];
 
-
 function App() {
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [clientId, setClientId] = useState<string>('');
@@ -21,15 +22,54 @@ function App() {
   const [itemId, setItemId] = useState<string>('');
   const [items, setItems] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
 
-  // Load items on component mount
+  // Initialize user session on component mount
   useEffect(() => {
-    loadItems();
+    initializeUserSession();
   }, []);
 
+  // Load items when userId is available
+  useEffect(() => {
+    if (userId) {
+      loadItems();
+    }
+  }, [userId]);
+
+  const initializeUserSession = async () => {
+    // Check if userId exists in sessionStorage
+    const storedUserId = sessionStorage.getItem('userId');
+    console.log('Stored userId from sessionStorage:', storedUserId);
+    
+    if (storedUserId) {
+      setUserId(parseInt(storedUserId));
+      console.log('User ID récupéré du sessionStorage:', storedUserId);
+    } else {
+      // Request new user ID from backend
+      try {
+        console.log('Requesting new user ID from backend...');
+        const response = await fetch('/new_user_id');
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        if (data.userId) {
+          setUserId(data.userId);
+          sessionStorage.setItem('userId', data.userId.toString());
+          console.log('Nouveau User ID attribué:', data.userId);
+        } else {
+          console.error('No userId in response:', data);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du User ID:', error);
+      }
+    }
+  };
+
   const loadItems = async () => {
+    if (!userId) return;
+    
     try {
-      const response = await fetch('/items/');
+      const response = await fetch(`/items/${userId}`);
       const data = await response.json();
       
       if (data.item) {
@@ -44,12 +84,17 @@ function App() {
   };
 
   const searchClient = async (option: string, id: string) => {
+    if (!userId) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch(`/get_client_id/${option}/${id}`);
+      const response = await fetch(`/get_client_id/${option}/${id}/${userId}`);
       const data = await response.json();
-      
-      alert("Réponse du serveur : " + JSON.stringify(data));
+      console.log(data)
+      if (data.message)
+        showSuccess(JSON.stringify(data.message));
+      if (data.error)
+        showError(JSON.stringify(data.error));
       
       // Parse the message like in the original code
       const message = data.message;
@@ -65,84 +110,88 @@ function App() {
       setClientId(''); // Reset form like in original
     } catch (error) {
       console.error("Erreur lors de l'envoi :", error);
-      alert("Erreur !");
     } finally {
       setIsLoading(false);
     }
   };
 
   const addItem = async (id: string) => {
-    if (!id.trim()) return;
+    if (!id.trim() || !userId) return;
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/add_items/${id}`, {
+      const response = await fetch(`/add_items/${id}/${userId}`, {
         method: "PUT"
       });
       const data = await response.json();
       
-      alert("Réponse du serveur : " + JSON.stringify(data));
+      showSuccess(JSON.stringify(data.message));
       setItemId(''); // Reset form like in original
       
       // Reload items from backend
       await loadItems();
     } catch (error) {
       console.error("Erreur lors de l'envoi :", error);
-      alert("Erreur !");
     } finally {
       setIsLoading(false);
     }
   };
 
   const deleteItem = async (id: string) => {
+    if (!userId) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch(`/delete_item/${id}`);
+      const response = await fetch(`/delete_item/${id}/${userId}`);
       const data = await response.json();
       
-      alert("Réponse du serveur : " + JSON.stringify(data));
+      showSuccess(JSON.stringify(data.message));
       
       // Reload items from backend
       await loadItems();
     } catch (error) {
       console.error("Erreur lors de la suppression :", error);
-      alert("Erreur !");
+      showError("Une erreur est survenue. Veuillez réessayer ou recharger la page.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const finishTask = async () => {
+    if (!userId) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch("/finish_task");
+      const response = await fetch(`/finish_task/${userId}`);
       const data = await response.json();
-      
-      alert("Réponse du serveur : " + JSON.stringify(data));
+      if (data.message)
+        showSuccess(JSON.stringify(data.message));
+    if (data.error)
+        showError(JSON.stringify(data.error));
       
       // Reload items from backend
       await loadItems();
     } catch (error) {
       console.error("Erreur :", error);
-      alert("Erreur !");
     } finally {
       setIsLoading(false);
     }
   };
 
   const clearItems = async () => {
+    if (!userId) return;
+    
     setIsLoading(true);
     try {
-      const response = await fetch("/clear_items");
+      const response = await fetch(`/clear_items/${userId}`);
       const data = await response.json();
       
-      alert("Réponse du serveur : " + JSON.stringify(data));
+      showSuccess(JSON.stringify(data.message));
       
       // Reload items from backend
       await loadItems();
     } catch (error) {
       console.error("Erreur :", error);
-      alert("Erreur !");
     } finally {
       setIsLoading(false);
     }
@@ -151,11 +200,11 @@ function App() {
   const handleClientSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOption) {
-      alert('Veuillez sélectionner une option');
+      showError('Veuillez sélectionner une option');
       return;
     }
     if (!clientId) {
-      alert('Veuillez entrer un ID client');
+      showError('Veuillez entrer un ID client');
       return;
     }
     searchClient(selectedOption, clientId);
@@ -164,11 +213,23 @@ function App() {
   const handleItemAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!itemId) {
-      alert('Veuillez entrer un ID d\'item');
+      showError('Veuillez entrer un ID d\'item');
       return;
     }
     addItem(itemId);
   };
+
+  // Show loading state while initializing user session
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Initialisation de la session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -187,7 +248,10 @@ function App() {
             }
           }}
           className="fixed top-0 left-0 opacity-0 pointer-events-none"
-/>
+        />
+        <>
+        <Toaster position='top-right'/> 
+        </>
         {/* Header */}
         <div className="text-center py-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -197,6 +261,7 @@ function App() {
             <h1 className="text-4xl font-bold text-slate-800">Outil Scann</h1>
           </div>
           <p className="text-slate-600 text-lg">Scanner code-barre MCFOI</p>
+          <p className="text-slate-500 text-sm mt-2">Session utilisateur: {userId}</p>
         </div>
 
         {/* Option Selector */}
@@ -238,7 +303,6 @@ function App() {
             ))}
           </div>
         </div>
-
 
         {/* Client Search */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">

@@ -2,11 +2,9 @@ from typing import Union
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import FastAPI
 from pydantic import BaseModel
-import asyncio
-import websockets
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
-import os
+from websocket_utils import send_to_external_app, format_message, ask_cid
+
 
 class User:
     def __init__(self, uid:int):
@@ -16,49 +14,9 @@ class User:
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-load_dotenv("./.env")
 
 user_counter = 0
-uri = os.environ.get("IP_ADRESS")
 cdb = []
-
-async def send_to_external_app(data: str):
-    try:
-        async with websockets.connect(uri) as websocket:
-            await websocket.send(data)
-            print("Envoyé à l'app externe :", data)
-            response = await websocket.recv()
-            print("Réponse de l'app :", response)
-    except Exception as e:
-        print("Erreur WebSocket sortante:", e)
-        return 84
-    return 0
-
-async def ask_cid(message:str):
-    try:
-        async with websockets.connect(uri) as websocket:
-            await websocket.send(message)
-            print("Envoyé à l'app externe :", message)
-            response = await websocket.recv()
-            print("Réponse de l'app :", response)
-            if response[:3] == "ERR":
-                return None
-    except Exception as e:
-        print("Erreur WebSocket sortante:", e)
-        return None
-    return response
-
-def format_message(db:list, cid:str):
-    message = f"9;{cid};"
-    elements = ""
-    i = 0
-    space = ""
-    for data in db:
-        elements += f"{space}{i + 1}|{data}"
-        i += 1
-        if i > 0:
-            space = " "
-    return message + elements
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
