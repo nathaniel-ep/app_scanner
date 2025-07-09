@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Package, User, Plus, Check, Trash2, ScanLine, X } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
+import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems} from './utils/api';
 
 interface Client {
   id: string;
@@ -16,185 +17,148 @@ const options = [
 ];
 
 function App() {
-  const [selectedOption, setSelectedOption] = useState<string>('');
-  const [clientId, setClientId] = useState<string>('');
+  const [selectedOption, setSelectedOption] = useState('');
+  const [clientId, setClientId] = useState('');
   const [client, setClient] = useState<Client | null>(null);
-  const [itemId, setItemId] = useState<string>('');
+  const [itemId, setItemId] = useState('');
   const [items, setItems] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Initialize user session on component mount
   useEffect(() => {
     initializeUserSession();
   }, []);
 
-  // Load items when userId is available
+ useEffect(() => {
+    if (userId)
+      loadCid();
+  }, [userId]);
+
   useEffect(() => {
-    if (userId) {
+    if (userId)
       loadItems();
-    }
   }, [userId]);
 
   const initializeUserSession = async () => {
-    // Check if userId exists in sessionStorage
     const storedUserId = sessionStorage.getItem('userId');
-    console.log('Stored userId from sessionStorage:', storedUserId);
-    
     if (storedUserId) {
       setUserId(parseInt(storedUserId));
-      console.log('User ID récupéré du sessionStorage:', storedUserId);
     } else {
-      // Request new user ID from backend
-      try {
-        console.log('Requesting new user ID from backend...');
-        const response = await fetch('/new_user_id');
-        console.log('Response status:', response.status);
-        const data = await response.json();
-        console.log('Response data:', data);
-        if (data.userId) {
-          setUserId(data.userId);
-          sessionStorage.setItem('userId', data.userId.toString());
-          console.log('Nouveau User ID attribué:', data.userId);
-        } else {
-          console.error('No userId in response:', data);
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du User ID:', error);
+      const newId = await getUserId();
+      if (newId !== null) {
+        setUserId(newId);
+        sessionStorage.setItem('userId', newId.toString());
       }
+    }
+  };
+
+ const loadCid = async () => {
+    if (!userId)
+      return;
+    try {
+      setClient(null) ;
+    } catch (error) {
+      showError("Impossible de charger les éléments.");
     }
   };
 
   const loadItems = async () => {
-    if (!userId) return;
-    
+    if (!userId)
+      return;
     try {
-      const response = await fetch(`/items/${userId}`);
-      const data = await response.json();
-      
-      if (data.item) {
-        setItems(data.item);
-      } else {
-        setItems([]);
-      }
+      const list = await fetchItems(userId);
+      setItems(list || []);
     } catch (error) {
-      console.error('Erreur lors de la récupération des items :', error);
-      setItems([]);
+      showError("Impossible de charger les éléments.");
     }
   };
 
   const searchClient = async (option: string, id: string) => {
-    if (!userId) return;
-    
+    if (!userId)
+      return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/get_client_id/${option}/${id}/${userId}`);
-      const data = await response.json();
-      console.log(data)
-      if (data.message)
-        showSuccess(JSON.stringify(data.message));
-      if (data.error)
-        showError(JSON.stringify(data.error));
-      
-      // Parse the message like in the original code
-      const message = data.message;
-      const array = message.split(";");
-      
-      const clientData = {
-        id: id,
-        name: array[1] || `Client ${id}`,
-        info: `${array[1]} ${array[2]} ${array[3]}` || `Informations client ${id} - Option ${option}`
-      };
-      
-      setClient(clientData);
-      setClientId(''); // Reset form like in original
+      const response = await searchClientById(option, id, userId);
+      if (response?.message) {
+        showSuccess(response.message);
+        const array = response.message.split(';');
+        setClient({
+          id,
+          name: array[1] || `Client ${id}`,
+          info: `${array[1]} ${array[2]} ${array[3]}`
+        });
+      } else if (response?.error) {
+        showError(response.error);
+      }
     } catch (error) {
-      console.error("Erreur lors de l'envoi :", error);
-    } finally {
-      setIsLoading(false);
+      showError("Erreur lors de la recherche client.");
     }
+    setClientId('');
+    setIsLoading(false);
   };
 
   const addItem = async (id: string) => {
-    if (!id.trim() || !userId) return;
-    
+    if (!id.trim() || !userId)
+      return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/add_items/${id}/${userId}`, {
-        method: "PUT"
-      });
-      const data = await response.json();
-      
-      showSuccess(JSON.stringify(data.message));
-      setItemId(''); // Reset form like in original
-      
-      // Reload items from backend
+      const res = await addItemToList(id, userId);
+      if (res?.message)
+        showSuccess(res.message);
       await loadItems();
     } catch (error) {
-      console.error("Erreur lors de l'envoi :", error);
-    } finally {
-      setIsLoading(false);
+      showError("Impossible d'ajouter l'élément.");
     }
+    setItemId('');
+    setIsLoading(false);
   };
 
   const deleteItem = async (id: string) => {
-    if (!userId) return;
-    
+    if (!userId)
+      return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/delete_item/${id}/${userId}`);
-      const data = await response.json();
-      
-      showSuccess(JSON.stringify(data.message));
-      
-      // Reload items from backend
+      const res = await deleteItemFromList(id, userId);
+      if (res?.message) 
+        showSuccess(res.message);
       await loadItems();
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
-      showError("Une erreur est survenue. Veuillez réessayer ou recharger la page.");
-    } finally {
-      setIsLoading(false);
+      showError("Erreur lors de la suppression de l'élément.");
     }
+    setIsLoading(false);
   };
 
   const finishTask = async () => {
-    if (!userId) return;
-    
+    if (!userId)
+      return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/finish_task/${userId}`);
-      const data = await response.json();
-      if (data.message)
-        showSuccess(JSON.stringify(data.message));
-    if (data.error)
-        showError(JSON.stringify(data.error));
-      
-      // Reload items from backend
+      const res = await finishUserTask(userId);
+      if (res?.message)
+        showSuccess(res.message);
+      if (res?.error)
+        showError(res.error);
       await loadItems();
+      loadCid();
     } catch (error) {
-      console.error("Erreur :", error);
-    } finally {
-      setIsLoading(false);
+      showError("Impossible de terminer la tâche.");
     }
+    setIsLoading(false);
   };
 
   const clearItems = async () => {
-    if (!userId) return;
-    
+    if (!userId)
+      return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/clear_items/${userId}`);
-      const data = await response.json();
-      
-      showSuccess(JSON.stringify(data.message));
-      
-      // Reload items from backend
+      const res = await clearAllItems(userId);
+      if (res?.message)
+        showSuccess(res.message);
       await loadItems();
     } catch (error) {
-      console.error("Erreur :", error);
-    } finally {
-      setIsLoading(false);
+      showError("Erreur lors de la suppression des éléments.");
     }
+    setIsLoading(false);
   };
 
   const handleClientSearch = (e: React.FormEvent) => {
@@ -213,26 +177,15 @@ function App() {
   const handleItemAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!itemId) {
-      showError('Veuillez entrer un ID d\'item');
+      showError("Veuillez entrer un ID d'item");
       return;
     }
     addItem(itemId);
   };
 
-  // Show loading state while initializing user session
-  if (!userId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Initialisation de la session...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <Toaster position="top-right" />
       <div className="max-w-4xl mx-auto space-y-6">
         <input
           type="text"
@@ -249,9 +202,6 @@ function App() {
           }}
           className="fixed top-0 left-0 opacity-0 pointer-events-none"
         />
-        <>
-        <Toaster position='top-right'/> 
-        </>
         {/* Header */}
         <div className="text-center py-8">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -343,7 +293,7 @@ function App() {
         {/* Client Display */}
         {client && (
           <div className="bg-green-50 rounded-xl shadow-lg p-6 border border-green-200">
-            <h2 className="text-xl font-semibold text-green-800 mb-3">Client trouvé</h2>
+            <h2 className="text-xl font-semibold text-green-800 mb-3">Client: </h2>
             <div className="bg-white rounded-lg p-4 border border-green-200">
               <p className="text-green-700 font-medium">{client.info}</p>
             </div>
