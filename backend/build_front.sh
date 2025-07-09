@@ -1,0 +1,1 @@
+(cd ../frontend ; npm run build) && rm -r static/* ; cp -r ../frontend/dist/* static ; python3 replace_html.py
