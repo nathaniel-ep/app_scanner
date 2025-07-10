@@ -80,6 +80,7 @@ cd projet-scanner
 #### Backend
 ```bash
 cd backend
+si premier installation installer venv python : sudo apt install python3-venv
 python3 -m venv mcfscan
 source mcfscan/bin/activate
 pip install -r requirements.txt
@@ -87,7 +88,7 @@ pip install -r requirements.txt
 
 #### Frontend
 ```bash
-cd frontend
+cd ../frontend
 npm install
 ```
 
@@ -151,7 +152,7 @@ uvicorn main:app --reload
 ### 6. Lancer le serveur pour prod
 ```bash
 cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 | Élément          | Explication                                                                                                                                                                                                                                        |
