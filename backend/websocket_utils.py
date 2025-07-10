@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv("./.env")
-uri = os.environ.get("IP_ADRESS")
+uri = os.environ.get("IP_ADDRESS")
 
 async def send_to_external_app(data: str):
     try:
