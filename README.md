@@ -11,6 +11,7 @@ L'interface utilisateur est développée en **React + TypeScript + TailwindCSS**
 .
 ├── backend/              # Serveur FastAPI
 │   ├── main.py           # Point d'entrée backend
+│   ├── websocket_utils.py # websocket
 │   ├── requirements.txt  # Dépendances backend
 │   └── static/           # Contient les fichiers du frontend buildé
 └── frontend/             # Code source React
