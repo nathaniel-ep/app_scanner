@@ -29,9 +29,8 @@ async def free_user():
     while True:
         await asyncio.sleep(5 * 60)
         for user in cdb:
-            print(f"user {user.uid}: timer: {time_in_run() - user.timer} > {SESSION_TIMEOUT}")
+            print(f"user {user.uid}: timer: {time_in_run() - user.timer}")
             if time_in_run() - user.timer > SESSION_TIMEOUT:
-                print(user.uid, "supprimé")
                 user.code.clear()
                 user.cid = ""
                 cdb.remove(user)
@@ -97,8 +96,6 @@ async def get_client_id(document_type:int, id:int, uid:int):
 @app.get("/items/{uid}")
 def get_all_items(uid:int):
     for user in cdb:
-        print(user.uid)
-    for user in cdb:
         if user.uid == uid:
             return {"item" : user.code}
     return JSONResponse(content={"error" : "utilisateur non trouvé."}, status_code=404)
@@ -130,7 +127,6 @@ def new_user_id():
 
 @app.get("/check_session/{uid}")
 def check_session(uid: int):
-    print("en vie", uid)
     for user in cdb:
         if user.uid == uid:
             user.timer = time_in_run()
