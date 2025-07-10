@@ -1,23 +1,56 @@
 from typing import Union
-from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
+import asyncio
+from pydantic import BaseModel
 from websocket_utils import send_to_external_app, format_message, ask_cid
+from datetime import datetime, timedelta, timezone
 
+#Définition des variable global accesible a toutes les routes et fonction
+SESSION_TIMEOUT = timedelta(minutes=1)
+user_counter = 0
+cdb = []
 
+# Création d'un objet User pour gerer les différents utilisateurs qui utiliseront l'application
 class User:
     def __init__(self, uid:int):
         self.uid:int = uid
         self.code:list = []
         self.cid:str = ""
+        self.timer = datetime.now(timezone.utc) + timedelta(hours=4)
 
-app = FastAPI()
+# foncion utilisé dans l'API
+def time_in_run():
+    return datetime.now(timezone.utc) + timedelta(hours=4)
+
+async def free_user():
+    while True:
+        await asyncio.sleep(60)
+        for user in cdb:
+            print(f"user {user.uid}: timer: {time_in_run() - user.timer} > {SESSION_TIMEOUT}")
+            if time_in_run() - user.timer > SESSION_TIMEOUT:
+                print(user.uid, "supprimé")
+                user.code.clear()
+                user.cid = ""
+                cdb.remove(user)
+
+# Configuration API
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(free_user())
+    yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        print("Tâche de purge arrêtée proprement.")
+
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-user_counter = 0
-cdb = []
-
+# Routes API
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     with open('static/index.html', "r") as f:
@@ -64,6 +97,8 @@ async def get_client_id(document_type:int, id:int, uid:int):
 @app.get("/items/{uid}")
 def get_all_items(uid:int):
     for user in cdb:
+        print(user.uid)
+    for user in cdb:
         if user.uid == uid:
             return {"item" : user.code}
     return JSONResponse(content={"error" : "utilisateur non trouvé."}, status_code=404)
@@ -92,3 +127,10 @@ def new_user_id():
     cdb.append(User(user_counter))
     print("Nouvelle connexion ID attribué:", user_counter)
     return {"userId": user_counter}
+
+@app.get("/check_session/{uid}")
+def check_session(uid: int):
+    print("en vie", uid)
+    for user in cdb:
+        if user.uid == uid:
+            user.timer = time_in_run()
