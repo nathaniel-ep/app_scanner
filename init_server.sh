@@ -6,5 +6,5 @@ sudo apt install npm
     source mcfscan/bin/activate
 else
     python3 -m venv mcfscan
-fi && pip install -r requirements.txt)
+fi ; pip install -r requirements.txt)
 (cd frontend ; npm install)
