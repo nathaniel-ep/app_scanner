@@ -90,7 +90,6 @@ cd projet-scanner
 #### Backend
 ```bash
 cd backend
-si premier installation installer venv python : sudo apt install python3-venv
 python3 -m venv mcfscan
 source mcfscan/bin/activate
 pip install -r requirements.txt
