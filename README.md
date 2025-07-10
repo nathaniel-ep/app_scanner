@@ -67,6 +67,16 @@ L'interface utilisateur est développée en **React + TypeScript + TailwindCSS**
 
 ## 🚀 Lancer le projet localement (Linux)
 
+## Sur une nouvelle machine
+installation de `python`, `npm`, `python-venv`, `git`
+
+```bash
+sudo apt install git
+sudo apt instal python3
+sudo apt install python3-venv
+sudo apt install npm
+```
+
 ### 1. Cloner le projet
 ```bash
 git clone <url_du_repo>
