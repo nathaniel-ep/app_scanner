@@ -9,7 +9,7 @@ from websocket_utils import send_to_external_app, format_message, ask_cid
 from datetime import datetime, timedelta, timezone
 
 #Définition des variable global accesible a toutes les routes et fonction
-SESSION_TIMEOUT = timedelta(minutes=1)
+SESSION_TIMEOUT = timedelta(minutes=10)
 user_counter = 0
 cdb = []
 
@@ -27,7 +27,7 @@ def time_in_run():
 
 async def free_user():
     while True:
-        await asyncio.sleep(60)
+        await asyncio.sleep(5 * 60)
         for user in cdb:
             print(f"user {user.uid}: timer: {time_in_run() - user.timer} > {SESSION_TIMEOUT}")
             if time_in_run() - user.timer > SESSION_TIMEOUT:
