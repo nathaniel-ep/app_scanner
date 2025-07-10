@@ -98,7 +98,7 @@ pip install -r requirements.txt
 
 #### Frontend
 ```bash
-cd ../frontend
+cd frontend
 npm install
 ```
 
@@ -127,6 +127,15 @@ Depuis la racine
 rm -r backend/static/*
 cp -r frontend/dist/* backend/static
 ```
+
+### Lancer le script `build_front.sh` depuis la racine du repo
+
+```bash
+cd backend/
+./build_front.sh
+```
+
+### ou pour le faire a la main:
 
 Dans `backend/static/index.html`, ajoutez `/static` avant `/assets` pour les deux fichiers `.js` et `.css`:
 
@@ -159,7 +168,13 @@ cd backend
 uvicorn main:app --reload
 ```
 
-### 6. Lancer le serveur pour prod
+### 6. Lancer l'app avec le script `start_app.sh` depuis la racine du repo
+
+```bash
+./start_app.sh
+```
+
+### Lancer le serveur pour prod
 ```bash
 cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000

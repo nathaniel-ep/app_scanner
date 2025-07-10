@@ -1,4 +1,4 @@
-PATH = "static/index.html"
+PATH = "backend/static/index.html"
 
 with open(PATH, "r") as f:
     content = f.read()

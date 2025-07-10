@@ -61,9 +61,9 @@ def update_item(item_id: int, uid:int):
     for user in cdb:
         if user.uid == uid:
             if item_id in user.code:
-                return {"message" : f"Le code-barre {item_id} deja pésent dans la liste."} 
+                return {"message" : f"Le code-barres {item_id} deja pésent dans la liste."} 
             user.code.append(item_id)
-    return {"message": f"Le code-barre {item_id} ajouté."}
+    return {"message": f"Le code-barres {item_id} ajouté."}
 
 @app.get("/finish_task/{uid}")
 async def finish_task(uid:int):
@@ -117,7 +117,7 @@ def delete_item(item_id:int, uid:int):
         if user.uid == uid:
             if item_id in user.code:
                 user.code.remove(item_id)
-                return {"message": f"Le code-barre {item_id} a bien été supprimé"}
+                return {"message": f"Le code-barres {item_id} a bien été supprimé"}
     return JSONResponse(content={"error" : "utilisateur non trouvé."}, status_code=404)
 
 @app.get("/new_user_id")

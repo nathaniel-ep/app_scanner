@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Package, User, Plus, Check, Trash2, ScanLine, X } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
-import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems} from './utils/api';
+import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems, pingSession} from './utils/api';
 
 interface Client {
   id: string;
@@ -38,6 +38,11 @@ function App() {
     if (userId)
       loadItems();
   }, [userId]);
+
+  useEffect(() =>{
+    if (userId)
+      pingSession(userId);
+  }, [userId])
 
   const initializeUserSession = async () => {
     const storedUserId = sessionStorage.getItem('userId');
@@ -106,6 +111,7 @@ function App() {
       if (res?.message)
         showSuccess(res.message);
       await loadItems();
+      await pingSession(userId)
     } catch (error) {
       showError("Impossible d'ajouter l'élément.");
     }
@@ -122,6 +128,7 @@ function App() {
       if (res?.message) 
         showSuccess(res.message);
       await loadItems();
+      await pingSession(userId)
     } catch (error) {
       showError("Erreur lors de la suppression de l'élément.");
     }
@@ -139,6 +146,7 @@ function App() {
       if (res?.error)
         showError(res.error);
       await loadItems();
+      await pingSession(userId)
       loadCid();
     } catch (error) {
       showError("Impossible de terminer la tâche.");
@@ -155,6 +163,7 @@ function App() {
       if (res?.message)
         showSuccess(res.message);
       await loadItems();
+      await pingSession(userId)
     } catch (error) {
       showError("Erreur lors de la suppression des éléments.");
     }
@@ -258,12 +267,12 @@ function App() {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
           <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <User className="h-5 w-5" />
-            Recherche client
+            Recherche de document
           </h2>
           <form onSubmit={handleClientSearch} className="space-y-4">
             <div>
               <label htmlFor="clientId" className="block text-sm font-medium text-slate-700 mb-2">
-                ID client
+                Numéro de document
               </label>
               <input
                 type="number"
@@ -271,7 +280,7 @@ function App() {
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Entrez l'ID du client"
+                placeholder="Entrez un numéro de document"
                 disabled={isLoading}
               />
             </div>
@@ -285,7 +294,7 @@ function App() {
               ) : (
                 <Search className="h-5 w-5" />
               )}
-              Rechercher client
+              Rechercher document
             </button>
           </form>
         </div>
@@ -304,7 +313,7 @@ function App() {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
           <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Liste des éléments
+            Liste des codes-barres
             <span className="text-sm font-normal text-slate-500 ml-2">
               ({items.length} élément{items.length !== 1 ? 's' : ''})
             </span>
@@ -313,7 +322,7 @@ function App() {
           {items.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Aucun élément ajouté</p>
+              <p>Aucun code-barres ajouté</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -341,13 +350,13 @@ function App() {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
           <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Gestion des éléments
+            Gestion des code-barres
           </h2>
           
           <form onSubmit={handleItemAdd} className="space-y-4 mb-6">
             <div>
               <label htmlFor="itemId" className="block text-sm font-medium text-slate-700 mb-2">
-                ID de l'item
+                Code-Barres
               </label>
               <input
                 type="number"
@@ -355,7 +364,7 @@ function App() {
                 value={itemId}
                 onChange={(e) => setItemId(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Entrez l'ID de l'item"
+                placeholder="Entrez un code-barres"
                 disabled={isLoading}
               />
             </div>

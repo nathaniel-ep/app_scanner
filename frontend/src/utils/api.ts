@@ -74,3 +74,14 @@ export const clearAllItems = async (userId: number): Promise<any> => {
     return { error: 'Erreur réseau' };
   }
 };
+
+export const pingSession = async (userId: number):Promise<any> => {
+  if (!userId)
+    return;
+  fetch(`/check_session/${userId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  }).catch((err) => {
+    console.error("Erreur lors du ping de session :", err);
+  });
+};
