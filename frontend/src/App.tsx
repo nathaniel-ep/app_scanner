@@ -206,6 +206,7 @@ function App() {
           id='for_scan'
           type="text"
           autoFocus
+          readOnly
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
