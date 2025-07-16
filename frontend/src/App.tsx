@@ -359,7 +359,6 @@ function App() {
                 Code-Barres
               </label>
               <input
-                type="number"
                 id="itemId"
                 value={itemId}
                 onChange={(e) => setItemId(e.target.value)}
