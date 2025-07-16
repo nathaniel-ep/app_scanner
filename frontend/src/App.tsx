@@ -3,6 +3,7 @@ import { Search, Package, User, Plus, Check, Trash2, ScanLine, X } from 'lucide-
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
 import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems, pingSession} from './utils/api';
+import { focusScannerInput } from './utils/focus_scan';
 
 interface Client {
   id: string;
@@ -100,6 +101,8 @@ function App() {
     }
     setClientId('');
     setIsLoading(false);
+    pingSession(userId)
+    focusScannerInput()
   };
 
   const addItem = async (id: string) => {
@@ -110,6 +113,7 @@ function App() {
       const res = await addItemToList(id, userId);
       if (res?.message)
         showSuccess(res.message);
+      focusScannerInput()
       await loadItems();
       await pingSession(userId)
     } catch (error) {
@@ -127,6 +131,7 @@ function App() {
       const res = await deleteItemFromList(id, userId);
       if (res?.message) 
         showSuccess(res.message);
+      focusScannerInput()
       await loadItems();
       await pingSession(userId)
     } catch (error) {
@@ -162,6 +167,7 @@ function App() {
       const res = await clearAllItems(userId);
       if (res?.message)
         showSuccess(res.message);
+      focusScannerInput()
       await loadItems();
       await pingSession(userId)
     } catch (error) {
@@ -197,6 +203,7 @@ function App() {
       <Toaster position="top-right" />
       <div className="max-w-4xl mx-auto space-y-6">
         <input
+          id='for_scan'
           type="text"
           autoFocus
           onKeyDown={(e) => {
@@ -364,7 +371,6 @@ function App() {
                 onChange={(e) => setItemId(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Entrez un code-barres"
-                disabled={isLoading}
               />
             </div>
             <button
