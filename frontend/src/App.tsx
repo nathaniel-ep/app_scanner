@@ -206,13 +206,6 @@ function App() {
           id='for_scan'
           type="text"
           autoFocus
-          readOnly
-          onFocus={(e) => {
-            e.currentTarget.readOnly = false;
-          }}
-          onBlur={(e) => {
-            e.currentTarget.readOnly = true;
-          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
