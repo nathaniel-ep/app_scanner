@@ -56,7 +56,7 @@ def read_root():
         return f.read()
 
 @app.put("/add_items/{item_id}/{uid}")
-def update_item(item_id: int, uid:int):
+def update_item(item_id: str, uid:int):
     for user in cdb:
         if user.uid == uid:
             if item_id in user.code:
@@ -109,7 +109,7 @@ def clear_items(uid:int):
     return JSONResponse(content={"error" : "utilisateur non trouvé."}, status_code=404)
 
 @app.get("/delete_item/{item_id}/{uid}")
-def delete_item(item_id:int, uid:int):
+def delete_item(item_id:str, uid:int):
     for user in cdb:
         if user.uid == uid:
             if item_id in user.code:
