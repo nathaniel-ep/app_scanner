@@ -71,10 +71,10 @@ async def finish_task(uid:int):
             try:
                 int(user.cid)
             except:
-                return JSONResponse(content={"error" : "ID client vide."})
+                return JSONResponse(content={"error" : "ID client vide."}, status_code=302)
             message = format_message(user.code, user.cid)
             if len(user.code) < 1:
-                return JSONResponse(content={"error": "La liste des données est vide"})
+                return JSONResponse(content={"error": "La liste des données est vide"}, status_code=302)
             res = await send_to_external_app(message)
             if res == 84:
                 return JSONResponse(content={"error": "Envoi des données impossible"}, status_code=500)
