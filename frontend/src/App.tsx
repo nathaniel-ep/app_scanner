@@ -12,9 +12,9 @@ interface Client {
 }
 
 const options = [
-  { label: 'Commande', value: '1' },
-  { label: 'BL', value: '2' },
-  { label: 'Facture', value: '3' }
+  { label: 'Commande', value: '2' },
+  { label: 'BL', value: '3' },
+  { label: 'Facture', value: '4' }
 ];
 
 function App() {

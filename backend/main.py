@@ -7,6 +7,9 @@ import asyncio
 from pydantic import BaseModel
 from websocket_utils import send_to_external_app, format_message, ask_cid
 from datetime import datetime, timedelta, timezone
+from hashlib import md5
+from dotenv import load_dotenv
+import os
 
 #Définition des variable global accesible a toutes les routes et fonction
 SESSION_TIMEOUT = timedelta(minutes=10)
@@ -20,6 +23,7 @@ class User:
         self.code:list = []
         self.cid:str = ""
         self.timer = datetime.now(timezone.utc) + timedelta(hours=4)
+        self.ipmode:str = "IP_ADDRESS"
 
 # foncion utilisé dans l'API
 def time_in_run():
@@ -45,6 +49,8 @@ async def lifespan(app: FastAPI):
         await task
     except asyncio.CancelledError:
         print("Tâche de purge arrêtée proprement.")
+
+load_dotenv('./.env')
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -75,7 +81,7 @@ async def finish_task(uid:int):
             message = format_message(user.code, user.cid)
             if len(user.code) < 1:
                 return JSONResponse(content={"error": "La liste des données est vide"}, status_code=302)
-            res = await send_to_external_app(message)
+            res = await send_to_external_app(message, user.ipmode)
             if res == 84:
                 return JSONResponse(content={"error": "Envoi des données impossible"}, status_code=500)
             user.code.clear()
@@ -85,11 +91,11 @@ async def finish_task(uid:int):
 
 @app.get("/get_client_id/{document_type}/{id}/{uid}")
 async def get_client_id(document_type:int, id:int, uid:int):
-    res = await ask_cid(str(document_type) + ";" + str(id))
-    if res == None:
-        return JSONResponse(content={"error": "Le client n'existe pas."}, status_code=404)
     for user in cdb:
         if user.uid == uid:
+            res = await ask_cid(str(document_type) + ";" + str(id), user.ipmode)
+            if res == None:
+                return JSONResponse(content={"error": "Le client n'existe pas."}, status_code=404)
             user.cid = res.split(";")[1]
             return {"message" : res}
 
@@ -130,3 +136,20 @@ def check_session(uid: int):
     for user in cdb:
         if user.uid == uid:
             user.timer = time_in_run()
+
+@app.post("/change_dest/{uid}/{ipmode}")
+def change_dest(uid:int, ipmode:int):
+    modes = ["IP_ADDRESS", "IP_TEST"]
+    for user in cdb:
+        if user.uid == uid:
+            user.ipmode = modes[ipmode]
+            return {"message" : "Destinataire changé avec succès."}
+
+@app.post("/sudo/{uid}/{mpass}")
+def my_sudo(uid:int, mpass:str):
+    mdp = os.environ.get("ADMIN_MDP")
+    hash = md5(mpass.encode()).hexdigest()
+    if hash == mdp:
+        print("YOUPIIII!!!!")
+        return {"message" : "c'est bon admin"}
+    

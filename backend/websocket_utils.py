@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv("./.env")
-uri = os.environ.get("IP_ADDRESS")
 
-async def send_to_external_app(data: str):
+async def send_to_external_app(data: str, ip:str):
+    uri = os.environ.get(ip)
     try:
         async with websockets.connect(uri) as websocket:
             await websocket.send(data)
@@ -18,7 +18,8 @@ async def send_to_external_app(data: str):
         return 84
     return 0
 
-async def ask_cid(message:str):
+async def ask_cid(message:str, ip:str):
+    uri = os.environ.get(ip)
     try:
         async with websockets.connect(uri) as websocket:
             await websocket.send(message)
