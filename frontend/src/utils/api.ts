@@ -75,7 +75,7 @@ export const clearAllItems = async (userId: number): Promise<any> => {
   }
 };
 
-export const pingSession = async (userId: number):Promise<any> => {
+export const pingSession = async (userId: number): Promise<any> => {
   if (!userId)
     return;
   fetch(`/check_session/${userId}`, {
@@ -84,4 +84,52 @@ export const pingSession = async (userId: number):Promise<any> => {
   }).catch((err) => {
     console.error("Erreur lors du ping de session :", err);
   });
+};
+
+export const checkMpass = async (userId: number | null, mpass: string): Promise<any> => {
+  try {
+    const response = await fetch(`/sudo/${userId}/${mpass}`, {
+      method: 'POST'
+    });
+    const res = await response.json();
+    if (!response.ok) {
+      throw new Error(res.error || 'Erreur inconnue');
+    }
+    return res;
+  } catch (error) {
+    console.error('[checkmpass]', error);
+    throw error;
+  }
+};
+
+export const isAdmin = async (userId: number | null): Promise<any> => {
+  try {
+    const response = await fetch(`/isadmin/${userId}`, {
+      method: 'GET'
+    });
+    const res = await response.json();
+    if (!response.ok) {
+      throw new Error(res.error || 'Erreur inconnue');
+    }
+    return res;
+  } catch (error) {
+    console.error('[isAdmin]', error);
+    throw error;
+  }
+};
+
+export const change_dest = async (selected:string, userId: number | null): Promise<any> => {
+  try {
+    const response = await fetch(`/change_dest/${userId}/${selected}`, {
+      method: 'POST'
+    });
+    const res = await response.json();
+    if (!response.ok) {
+      throw new Error(res.error || 'Erreur inconnue');
+    }
+    return res;
+  } catch (error) {
+    console.error('[change_dest]', error);
+    throw error;
+  }
 };

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Package, User, Plus, Check, Trash2, ScanLine, X } from 'lucide-react';
+import { Search, Package, User, Plus, Check, Trash2, ScanLine, X, Settings } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
-import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems, pingSession} from './utils/api';
+import { getUserId, fetchItems, searchClientById, addItemToList, deleteItemFromList, finishUserTask, clearAllItems, pingSession, isAdmin, change_dest } from './utils/api';
 import { focusScannerInput } from './utils/focus_scan';
+import { PasswordPopup } from './components/passwordpopup';
+import { SelectionPopup } from './components/ipmodepopup';
 
 interface Client {
   id: string;
@@ -18,6 +20,9 @@ const options = [
 ];
 
 function App() {
+  const [isadmin, setIsadmin] = useState(false)
+  const [showPopupIpMode, setShowPopupIpMode] = useState(false);
+  const [showPopupPassword, setShowPopupPassword] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
   const [clientId, setClientId] = useState('');
   const [client, setClient] = useState<Client | null>(null);
@@ -30,7 +35,7 @@ function App() {
     initializeUserSession();
   }, []);
 
- useEffect(() => {
+  useEffect(() => {
     if (userId)
       loadCid();
   }, [userId]);
@@ -40,7 +45,7 @@ function App() {
       loadItems();
   }, [userId]);
 
-  useEffect(() =>{
+  useEffect(() => {
     if (userId)
       pingSession(userId);
   }, [userId])
@@ -58,11 +63,11 @@ function App() {
     }
   };
 
- const loadCid = async () => {
+  const loadCid = async () => {
     if (!userId)
       return;
     try {
-      setClient(null) ;
+      setClient(null);
     } catch (error) {
       showError("Impossible de charger les éléments.");
     }
@@ -129,7 +134,7 @@ function App() {
     setIsLoading(true);
     try {
       const res = await deleteItemFromList(id, userId);
-      if (res?.message) 
+      if (res?.message)
         showSuccess(res.message);
       focusScannerInput()
       await loadItems();
@@ -198,9 +203,37 @@ function App() {
     addItem(itemId);
   };
 
+  const successPassWord = () => {
+    setShowPopupIpMode(true)
+  }
+
+  const handleShowPopup = async () => {
+    if (isadmin)
+      setShowPopupIpMode(true)
+    try {
+      const admin_response = await isAdmin(userId)
+      console.log(admin_response.message)
+      setIsadmin(true)
+    } catch (error) {
+      setShowPopupPassword(true)
+    }
+  }
+
+  const submitSelectedIp = async (selectedOption: string, userId: number | null) => {
+    change_dest(selectedOption, userId)
+    return ;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <Toaster position="top-right" />
+      <div className="fixed top-5 right-5">
+        <button className='hover:text-blue-500' onClick={handleShowPopup}>
+          <Settings />
+        </button>
+        <PasswordPopup show={showPopupPassword} setShow={setShowPopupPassword} onSuccess={successPassWord} userId={userId} />
+        <SelectionPopup show={showPopupIpMode} setShow={setShowPopupIpMode} onSuccess={submitSelectedIp} userId={userId}/>
+      </div>
       <div className="max-w-4xl mx-auto space-y-6">
         <input
           id='for_scan'
@@ -248,20 +281,18 @@ function App() {
                   className="sr-only"
                 />
                 <div
-                  className={`w-5 h-5 rounded-full border-2 mr-3 transition-all duration-200 ${
-                    selectedOption === value
-                      ? 'border-blue-600 bg-blue-600'
-                      : 'border-slate-300 group-hover:border-blue-400'
-                  }`}
+                  className={`w-5 h-5 rounded-full border-2 mr-3 transition-all duration-200 ${selectedOption === value
+                    ? 'border-blue-600 bg-blue-600'
+                    : 'border-slate-300 group-hover:border-blue-400'
+                    }`}
                 >
                   {selectedOption === value && (
                     <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
                   )}
                 </div>
                 <span
-                  className={`font-medium transition-colors ${
-                    selectedOption === value ? 'text-blue-600' : 'text-slate-700'
-                  }`}
+                  className={`font-medium transition-colors ${selectedOption === value ? 'text-blue-600' : 'text-slate-700'
+                    }`}
                 >
                   {label}
                 </span>
@@ -325,7 +356,7 @@ function App() {
               ({items.length} élément{items.length !== 1 ? 's' : ''})
             </span>
           </h2>
-          
+
           {items.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -359,7 +390,7 @@ function App() {
             <Plus className="h-5 w-5" />
             Gestion des code-barres
           </h2>
-          
+
           <form onSubmit={handleItemAdd} className="space-y-4 mb-6">
             <div>
               <label htmlFor="itemId" className="block text-sm font-medium text-slate-700 mb-2">

@@ -24,6 +24,7 @@ class User:
         self.cid:str = ""
         self.timer = datetime.now(timezone.utc) + timedelta(hours=4)
         self.ipmode:str = "IP_ADDRESS"
+        self.isadmin:bool = False
 
 # foncion utilisé dans l'API
 def time_in_run():
@@ -142,14 +143,25 @@ def change_dest(uid:int, ipmode:int):
     modes = ["IP_ADDRESS", "IP_TEST"]
     for user in cdb:
         if user.uid == uid:
-            user.ipmode = modes[ipmode]
+            user.ipmode = modes[int(ipmode)]
             return {"message" : "Destinataire changé avec succès."}
 
 @app.post("/sudo/{uid}/{mpass}")
 def my_sudo(uid:int, mpass:str):
-    mdp = os.environ.get("ADMIN_MDP")
-    hash = md5(mpass.encode()).hexdigest()
-    if hash == mdp:
-        print("YOUPIIII!!!!")
-        return {"message" : "c'est bon admin"}
+    for user in cdb:
+        if user.uid == uid:
+            mdp = os.environ.get("ADMIN_MDP")
+            hash = md5(mpass.encode()).hexdigest()
+            if hash == mdp:
+                user.isadmin = True
+                return {"message" : "mode admin activé"}
+            return JSONResponse(content={"error" : "mauvais mot de passe"}, status_code=401)
+
+@app.get("/isadmin/{uid}")
+def is_isadmin(uid:int):
+    for user in cdb:
+        if user.uid == uid:
+            if user.isadmin == True:
+                return {"message : admin ok"}
+    return JSONResponse(content={"error" : "Not admin"}, status_code=401)
     
