@@ -11,8 +11,6 @@ async def send_to_external_app(data: str, ip:str):
         async with websockets.connect(uri) as websocket:
             await websocket.send(data)
             print("Envoyé à l'app externe :", data)
-            response = await websocket.recv()
-            print("Réponse de l'app :", response)
     except Exception as e:
         print("Erreur WebSocket sortante:", e)
         return 84
