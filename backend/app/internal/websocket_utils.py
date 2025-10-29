@@ -49,7 +49,7 @@ async def send_to_external_app(data: str, ip: str) -> int:
     return 0
 
 
-async def ask_cid(message: str, ip: str) -> str | None:
+async def ask_cid(message: str, ip: str) -> str:
     """
     Demande un CID à l'application externe via WebSocket
     

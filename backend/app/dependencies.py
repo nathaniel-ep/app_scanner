@@ -32,7 +32,7 @@ def time_in_run() -> datetime:
     return datetime.now(timezone.utc) + timedelta(hours=4)
 
 
-def get_user_by_id(uid: int) -> User | None:
+def get_user_by_id(uid: int) -> User:
     """
     Récupère un utilisateur par son ID
     """
