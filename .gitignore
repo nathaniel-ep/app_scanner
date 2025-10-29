@@ -3,3 +3,12 @@ mcfscan
 dist
 __pycache__
 node_modules
+frontend
+build_front.sh
+dummy_server.py
+replace_html.py
+bin
+lib
+lib64
+pyenv.cfg
+include

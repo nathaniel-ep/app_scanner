@@ -16,10 +16,17 @@ Contenu attendu de l’archive:
 - python3-venv et pip
 - Outils système de base (bash, coreutils)
 
+Si besoin, installez-les:
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip
+```
+
+
 ## 1) Décompresser l’archive
 Placez-vous dans le dossier où se trouve le zip puis:
 ```bash
-unzip mcfoiscan.zip
+unzip mcfoiscan.zip -d mcfoiscan
 cd mcfoiscan
 ```
 
@@ -44,28 +51,19 @@ cd ..
 ```
 
 
-## 3) Configurer les variables d'environnement (backend/.env)
+## 3) Configurer les variables d’environnement (backend/.env)
 Le backend lit les variables dans `backend/.env`.
-
-### 3.1) Générer le hash MD5 du mot de passe admin
-Si vous souhaitez protéger l'accès admin, générez d'abord le hash MD5 de votre mot de passe:
-```bash
-echo -n 'mon_mot_de_passe' | md5sum | cut -d' ' -f1
-```
-Notez le résultat (chaîne hexadécimale de 32 caractères) pour l'utiliser dans le fichier `.env`.
-
-### 3.2) Créer le fichier .env
-Créez le fichier avec au minimum l'URL WebSocket de la cible finale:
+Créez ce fichier avec au minimum l’URL WebSocket de la cible finale:
 ```bash
 cat > backend/.env << 'EOF'
 # Destination par défaut pour l’envoi des données via WebSocket
 IP_ADDRESS="ws://ip_du_server:port"
 
-# Optionnel: destination alternative de test, sélectionnable depuis l'UI
+# Optionnel: destination alternative de test, sélectionnable depuis l’UI
 IP_TEST="ws://ip_de_test:port"
 
 # Optionnel: mot de passe admin sous forme de hash MD5 (hexadécimal)
-# Remplacez <hash_md5> par le résultat de la commande de l'étape 3.1
+# Pour générer le hash: echo -n 'mon_mot_de_passe' | md5sum | cut -d' ' -f1
 ADMIN_MDP="<hash_md5>"
 EOF
 ```
