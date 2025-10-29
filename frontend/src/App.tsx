@@ -239,7 +239,6 @@ function App() {
           readOnly
           id='for_scan'
           type="text"
-          autoFocus
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -274,7 +273,7 @@ function App() {
             {options.map(({ label, value }) => (
               <label key={value} className="flex items-center cursor-pointer group">
                 <input
-                readOnly
+                  readOnly
                   type="radio"
                   name="selection"
                   value={value}
