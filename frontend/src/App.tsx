@@ -236,6 +236,7 @@ function App() {
       </div>
       <div className="max-w-4xl mx-auto space-y-6">
         <input
+          readOnly
           id='for_scan'
           type="text"
           autoFocus
