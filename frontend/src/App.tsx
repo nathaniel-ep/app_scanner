@@ -221,7 +221,7 @@ function App() {
 
   const submitSelectedIp = async (selectedOption: string, userId: number | null) => {
     change_dest(selectedOption, userId)
-    return ;
+    return;
   }
 
   return (
@@ -232,14 +232,15 @@ function App() {
           <Settings />
         </button>
         <PasswordPopup show={showPopupPassword} setShow={setShowPopupPassword} onSuccess={successPassWord} userId={userId} />
-        <SelectionPopup show={showPopupIpMode} setShow={setShowPopupIpMode} onSuccess={submitSelectedIp} userId={userId}/>
+        <SelectionPopup show={showPopupIpMode} setShow={setShowPopupIpMode} onSuccess={submitSelectedIp} userId={userId} />
       </div>
       <div className="max-w-4xl mx-auto space-y-6">
         <input
-          readOnly
-          id='for_scan'
+          id="for_scan"
           type="text"
           autoFocus
+          inputMode="none"          // empêche le clavier virtuel Android
+          onFocus={(e) => e.target.setSelectionRange(0, 0)} // évite que le curseur reste visible
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -250,7 +251,7 @@ function App() {
               }
             }
           }}
-          className="fixed top-0 left-0 opacity-0 pointer-events-none"
+          className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
         />
         {/* Header */}
         <div className="text-center py-8">
@@ -274,8 +275,6 @@ function App() {
             {options.map(({ label, value }) => (
               <label key={value} className="flex items-center cursor-pointer group">
                 <input
-                  id='manual_scan'
-                  readOnly
                   type="radio"
                   name="selection"
                   value={value}
