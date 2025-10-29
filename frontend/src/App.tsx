@@ -59,6 +59,19 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If user is actively focused in a normal input/textarea (not the hidden scan input),
+      // don't treat keystrokes as scanner input so manual typing works as expected.
+      const active = document.activeElement as HTMLElement | null;
+      if (active) {
+        const tag = active.tagName;
+        const isEditable = active.isContentEditable;
+        const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        const isScanInput = (active.id === 'for_scan');
+        if (isInput && !isScanInput && !isEditable) {
+          // let normal input receive the keystroke
+          return;
+        }
+      }
       // ignore modifier keys
       if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'Tab')
         return;
@@ -99,6 +112,12 @@ function App() {
       const ie = e as InputEvent;
       const target = e.target as HTMLInputElement | null;
       let data = '';
+      // If user typed into a normal input (not our hidden scan input), ignore: let the field behave normally
+      if (target) {
+        if (target.id && target.id !== 'for_scan' && !target.readOnly) {
+          return;
+        }
+      }
       if (ie && typeof ie.data === 'string') {
         data = ie.data;
       } else if (target) {
@@ -124,13 +143,19 @@ function App() {
         }
         scanBufferRef.current = '';
         scanTimerRef.current = null;
-        // also clear visible input values to keep UI clean
-        if (target) target.value = '';
+        // also clear visible input values to keep UI clean (only if it's our scan input)
+        if (target && target.id === 'for_scan') target.value = '';
       }, 350);
     };
 
     const handlePaste = (e: ClipboardEvent) => {
       const pasted = e.clipboardData?.getData('text') || '';
+      const target = e.target as HTMLInputElement | null;
+      if (target) {
+        if (target.id && target.id !== 'for_scan' && !target.readOnly) {
+          return;
+        }
+      }
       if (!pasted) return;
       scanBufferRef.current += pasted;
       if (scanTimerRef.current) {
