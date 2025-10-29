@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Package, User, Plus, Check, Trash2, ScanLine, X, Settings } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
@@ -49,142 +49,6 @@ function App() {
     if (userId)
       pingSession(userId);
   }, [userId])
-
-  // Scanner handling: capture rapid keystrokes from a hardware scanner (Zebra in keystroke mode)
-  // without opening the on-screen keyboard. We assemble characters into a buffer and
-  // trigger addItem when Enter is received. The input in DOM is readonly + inputMode="none"
-  // to avoid the virtual keyboard on mobile.
-  const scanBufferRef = useRef<string>('');
-  const scanTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // If user is actively focused in a normal input/textarea (not the hidden scan input),
-      // don't treat keystrokes as scanner input so manual typing works as expected.
-      const active = document.activeElement as HTMLElement | null;
-      if (active) {
-        const tag = active.tagName;
-        const isEditable = active.isContentEditable;
-        const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-        const isScanInput = (active.id === 'for_scan');
-        if (isInput && !isScanInput && !isEditable) {
-          // let normal input receive the keystroke
-          return;
-        }
-      }
-      // ignore modifier keys
-      if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'Tab')
-        return;
-
-      // Enter => process buffer
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const code = scanBufferRef.current.trim();
-        if (code) {
-          // call addItem (async) but we don't await here
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          addItem(code);
-        }
-        scanBufferRef.current = '';
-        if (scanTimerRef.current) {
-          window.clearTimeout(scanTimerRef.current);
-          scanTimerRef.current = null;
-        }
-        return;
-      }
-
-      // Append printable characters to buffer
-      if (e.key.length === 1) {
-        scanBufferRef.current += e.key;
-
-        // reset/arm timeout to clear buffer after a short pause (scanners send characters quickly)
-        if (scanTimerRef.current) {
-          window.clearTimeout(scanTimerRef.current);
-        }
-        scanTimerRef.current = window.setTimeout(() => {
-          scanBufferRef.current = '';
-          scanTimerRef.current = null;
-        }, 300);
-      }
-    };
-
-    const handleInput = (e: Event) => {
-      const ie = e as InputEvent;
-      const target = e.target as HTMLInputElement | null;
-      let data = '';
-      // If user typed into a normal input (not our hidden scan input), ignore: let the field behave normally
-      if (target) {
-        if (target.id && target.id !== 'for_scan' && !target.readOnly) {
-          return;
-        }
-      }
-      if (ie && typeof ie.data === 'string') {
-        data = ie.data;
-      } else if (target) {
-        // fallback: take full value (useful when scanner pastes or sets value)
-        data = target.value || '';
-      }
-
-      if (!data)
-        return;
-
-      // If the scanner typed directly into a visible input, capture it in the buffer
-      scanBufferRef.current += data;
-
-      // schedule auto-submit after short pause
-      if (scanTimerRef.current) {
-        window.clearTimeout(scanTimerRef.current);
-      }
-      scanTimerRef.current = window.setTimeout(() => {
-        const code = scanBufferRef.current.trim();
-        if (code) {
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          addItem(code);
-        }
-        scanBufferRef.current = '';
-        scanTimerRef.current = null;
-        // also clear visible input values to keep UI clean (only if it's our scan input)
-        if (target && target.id === 'for_scan') target.value = '';
-      }, 350);
-    };
-
-    const handlePaste = (e: ClipboardEvent) => {
-      const pasted = e.clipboardData?.getData('text') || '';
-      const target = e.target as HTMLInputElement | null;
-      if (target) {
-        if (target.id && target.id !== 'for_scan' && !target.readOnly) {
-          return;
-        }
-      }
-      if (!pasted) return;
-      scanBufferRef.current += pasted;
-      if (scanTimerRef.current) {
-        window.clearTimeout(scanTimerRef.current);
-      }
-      scanTimerRef.current = window.setTimeout(() => {
-        const code = scanBufferRef.current.trim();
-        if (code) {
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          addItem(code);
-        }
-        scanBufferRef.current = '';
-        scanTimerRef.current = null;
-      }, 200);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('input', handleInput, true);
-    window.addEventListener('paste', handlePaste, true);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('input', handleInput, true);
-      window.removeEventListener('paste', handlePaste, true);
-      if (scanTimerRef.current) {
-        window.clearTimeout(scanTimerRef.current);
-      }
-    };
-  }, [userId]);
 
   const initializeUserSession = async () => {
     const storedUserId = sessionStorage.getItem('userId');
@@ -374,11 +238,17 @@ function App() {
         <input
           id='for_scan'
           type="text"
-          // prevent mobile virtual keyboard from opening on focus
-          inputMode="none"
-          readOnly
-          // keep it present in the DOM for legacy behaviour but hidden
-          value={''}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              const scannedCode = e.currentTarget.value.trim();
+              if (scannedCode) {
+                addItem(scannedCode);
+                e.currentTarget.value = '';
+              }
+            }
+          }}
           className="fixed top-0 left-0 opacity-0 pointer-events-none"
         />
         {/* Header */}
