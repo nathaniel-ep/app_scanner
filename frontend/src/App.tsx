@@ -240,7 +240,6 @@ function App() {
           type="text"
           autoFocus
           inputMode="none"          // empêche le clavier virtuel Android
-          onFocus={(e) => e.target.setSelectionRange(0, 0)} // évite que le curseur reste visible
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
