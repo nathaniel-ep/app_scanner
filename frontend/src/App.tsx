@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Package, User, Plus, Check, Trash2, ScanLine, X, Settings } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { showSuccess, showError } from './utils/toastutils';
@@ -49,6 +49,60 @@ function App() {
     if (userId)
       pingSession(userId);
   }, [userId])
+
+  // Scanner handling: capture rapid keystrokes from a hardware scanner (Zebra in keystroke mode)
+  // without opening the on-screen keyboard. We assemble characters into a buffer and
+  // trigger addItem when Enter is received. The input in DOM is readonly + inputMode="none"
+  // to avoid the virtual keyboard on mobile.
+  const scanBufferRef = useRef<string>('');
+  const scanTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // ignore modifier keys
+      if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' || e.key === 'Tab')
+        return;
+
+      // Enter => process buffer
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const code = scanBufferRef.current.trim();
+        if (code) {
+          // call addItem (async) but we don't await here
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          addItem(code);
+        }
+        scanBufferRef.current = '';
+        if (scanTimerRef.current) {
+          window.clearTimeout(scanTimerRef.current);
+          scanTimerRef.current = null;
+        }
+        return;
+      }
+
+      // Append printable characters to buffer
+      if (e.key.length === 1) {
+        scanBufferRef.current += e.key;
+
+        // reset/arm timeout to clear buffer after a short pause (scanners send characters quickly)
+        if (scanTimerRef.current) {
+          window.clearTimeout(scanTimerRef.current);
+        }
+        scanTimerRef.current = window.setTimeout(() => {
+          scanBufferRef.current = '';
+          scanTimerRef.current = null;
+        }, 300);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (scanTimerRef.current) {
+        window.clearTimeout(scanTimerRef.current);
+      }
+    };
+  }, [userId]);
 
   const initializeUserSession = async () => {
     const storedUserId = sessionStorage.getItem('userId');
@@ -238,17 +292,11 @@ function App() {
         <input
           id='for_scan'
           type="text"
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              const scannedCode = e.currentTarget.value.trim();
-              if (scannedCode) {
-                addItem(scannedCode);
-                e.currentTarget.value = '';
-              }
-            }
-          }}
+          // prevent mobile virtual keyboard from opening on focus
+          inputMode="none"
+          readOnly
+          // keep it present in the DOM for legacy behaviour but hidden
+          value={''}
           className="fixed top-0 left-0 opacity-0 pointer-events-none"
         />
         {/* Header */}
