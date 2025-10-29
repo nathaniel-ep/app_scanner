@@ -274,6 +274,7 @@ function App() {
             {options.map(({ label, value }) => (
               <label key={value} className="flex items-center cursor-pointer group">
                 <input
+                readOnly
                   type="radio"
                   name="selection"
                   value={value}
