@@ -239,7 +239,7 @@ function App() {
           id="for_scan"
           type="text"
           autoFocus
-          inputMode="none"          // empêche le clavier virtuel Android
+          inputMode="none"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
