@@ -31,5 +31,5 @@ if [[ ! -f ".env" ]]; then
     echo ""
 fi
 
-echo "Démarrage du serveur sur http://10.0.20.18:8081"
-uvicorn app.main:app --host 10.0.20.18 --port 8081
+echo "Démarrage du serveur sur http://0.0.0.0:8000"
+uvicorn app.main:app --host 0.0.0.0 --port 8000

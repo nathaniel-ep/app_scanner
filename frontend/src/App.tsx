@@ -95,9 +95,66 @@ function App() {
       }
     };
 
+    const handleInput = (e: Event) => {
+      const ie = e as InputEvent;
+      const target = e.target as HTMLInputElement | null;
+      let data = '';
+      if (ie && typeof ie.data === 'string') {
+        data = ie.data;
+      } else if (target) {
+        // fallback: take full value (useful when scanner pastes or sets value)
+        data = target.value || '';
+      }
+
+      if (!data)
+        return;
+
+      // If the scanner typed directly into a visible input, capture it in the buffer
+      scanBufferRef.current += data;
+
+      // schedule auto-submit after short pause
+      if (scanTimerRef.current) {
+        window.clearTimeout(scanTimerRef.current);
+      }
+      scanTimerRef.current = window.setTimeout(() => {
+        const code = scanBufferRef.current.trim();
+        if (code) {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          addItem(code);
+        }
+        scanBufferRef.current = '';
+        scanTimerRef.current = null;
+        // also clear visible input values to keep UI clean
+        if (target) target.value = '';
+      }, 350);
+    };
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const pasted = e.clipboardData?.getData('text') || '';
+      if (!pasted) return;
+      scanBufferRef.current += pasted;
+      if (scanTimerRef.current) {
+        window.clearTimeout(scanTimerRef.current);
+      }
+      scanTimerRef.current = window.setTimeout(() => {
+        const code = scanBufferRef.current.trim();
+        if (code) {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          addItem(code);
+        }
+        scanBufferRef.current = '';
+        scanTimerRef.current = null;
+      }, 200);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('input', handleInput, true);
+    window.addEventListener('paste', handlePaste, true);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('input', handleInput, true);
+      window.removeEventListener('paste', handlePaste, true);
       if (scanTimerRef.current) {
         window.clearTimeout(scanTimerRef.current);
       }
